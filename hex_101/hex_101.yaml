@@ -1,0 +1,426 @@
+schemaVersion: 2
+meta:
+  sourceVersionId: e19a98ce-6354-4886-ae54-4d6bb6f48ac3 # DO NOT CHANGE - Hex uses this to match up project versions when reimporting the file
+  description: This pipeline is to enrich current user information via Clearbit api
+  projectId: ced92653-77f4-454d-956b-d1e54ff1e5c8 # DO NOT CHANGE - Unique ID of the project from which this file was generated
+  title: hex_101
+  timezone: null
+  appTheme: SYS_PREF
+  codeLanguage: PYTHON
+  status: null
+  categories:
+    - name: Internal
+  castDecimalsDefault: true
+  logicQueryCacheTimeout: null
+  publishedQueryCacheTimeout: null
+projectAssets:
+  dataConnections:
+    - dataConnectionId: 7578b20d-de22-4206-8de5-69c40535826d # dev2 (redshift)
+  envVars: []
+  secrets:
+    - secretName: clearbit_api_key
+sharedAssets:
+  secrets: []
+  vcsPackages: []
+  dataConnections: []
+cells:
+  - cellType: CODE
+    cellId: 913f28b8-03b4-427e-bce3-1b7cd7e3c74b # DO NOT CHANGE - Hex uses this to match up cells when reimporting the file, and detect any changes to existing cells
+    cellLabel: Import some Python packages
+    config:
+      source: |-
+        import pandas as pd
+        import requests
+        import json
+        from datetime import datetime
+        from datetime import timezone
+  - cellType: SQL
+    cellId: dfeecc68-0c88-4517-a4e5-4df5192aeea9 # DO NOT CHANGE - Hex uses this to match up cells when reimporting the file, and detect any changes to existing cells
+    cellLabel: Extract new user emails
+    config:
+      source: |
+        SELECT *
+        FROM (
+            SELECT user_email AS email
+            FROM test.corporate_freemium_users
+            MINUS
+            SELECT email
+            FROM test_clean.clearbit_enrichment
+        )
+        ORDER BY random()
+        LIMIT 3
+      dataFrameCell: false
+      dataConnectionId: 7578b20d-de22-4206-8de5-69c40535826d
+      resultVariableName: new_contacts
+      useRichDisplay: true
+      sqlCellOutputType: PANDAS
+      useQueryMode: false
+      castDecimals: false
+      useNativeDates: false
+      outputFilteredResult: false
+      allowDuplicateColumns: false
+      tableDisplayConfig:
+        pageSize: 50
+        height: null
+        hideIcons: false
+        hideIndex: false
+        defaultSortColumn: null
+        defaultSortIndexColumn: null
+        defaultSortDirection: ASC
+        conditionalFormatting: null
+        filters: null
+        columnProperties:
+          - originalName: dataroom_id
+            renameTo: null
+            size: 140
+            wrapText: null
+            displayFormat: null
+          - originalName: email
+            renameTo: null
+            size: 175
+            wrapText: null
+            displayFormat: null
+          - originalName: fullname
+            renameTo: null
+            size: 123
+            wrapText: null
+            displayFormat: null
+          - originalName: user_email
+            renameTo: null
+            size: 353
+            wrapText: null
+            displayFormat: null
+          - originalName: userid
+            renameTo: null
+            size: 104
+            wrapText: null
+            displayFormat: null
+        columnOrdering: null
+  - cellType: CODE
+    cellId: 3f8bdec3-0ef0-4a0d-a08b-8315d2f388fd # DO NOT CHANGE - Hex uses this to match up cells when reimporting the file, and detect any changes to existing cells
+    cellLabel: Enriched json
+    config:
+      source: |-
+        import requests
+        import json
+        import pandas as pd
+
+        key = clearbit_api_key
+        headers = {"Authorization": f"Bearer {key}"}
+        data = []
+
+        #email = "carla.hayes@charterhall.com.au"
+        for index, contact in new_contacts.iterrows():
+            email = contact['email']
+            url = (
+                "https://person-stream.clearbit.com/v1/combined/email/" + email
+            )  # use streaming API
+            response = requests.get(url, headers=headers)
+            parse_json = json.loads(response.text)
+            data.append({"email": email, "info": parse_json})
+        enriched_json = pd.DataFrame(data)
+        enriched_json
+  - cellType: CODE
+    cellId: 8373aae2-65ed-4ed8-bf4a-afc1260e30a6 # DO NOT CHANGE - Hex uses this to match up cells when reimporting the file, and detect any changes to existing cells
+    cellLabel: Transformed data
+    config:
+      source: |-
+        new_df = []
+
+        # Specify your transformation logic here
+        for index, row in enriched_json.iterrows():
+        #### Select fields from PERSON info
+            new_row = {}
+            person_init = {'person_fullname': None,
+                        'person_location': None,
+                        'person_city': None,
+                        'person_state': None,
+                        'person_state_code': None,
+                        'person_country': None,
+                        'person_country_code': None,
+                        'person_employment_domain': None,
+                        'person_employment_name': None,
+                        'person_employment_title': None,
+                        'person_employment_role': None,
+                        'person_phone': None,
+                        'person_indexed_at': None}
+            company_init =   {
+                        # COMPANY info
+                        'company_name': None,
+                        'company_legal_name': None,
+                        'company_domain': None,
+                        'company_domain_aliases': None,
+                        'company_sector': None,
+                        'company_industry_grp': None,
+                        'company_industry': None,
+                        'company_subindustry': None,
+                        'company_sic_code': None,
+                        'company_street_number': None,
+                        'company_street_name': None,
+                        'company_subpremise': None,
+                        'company_city': None,
+                        'company_postal_code': None,
+                        'company_state': None,
+                        'company_state_code': None,
+                        'company_country': None,
+                        'company_country_code': None,
+                        'company_alexa_us_rank': None,
+                        'company_alexa_global_rank': None,
+                        'company_employees': None,
+                        'company_employees_range': None,
+                        'company_market_cap': None,
+                        'company_raised': None,
+                        'company_annual_revenue': None,
+                        'company_estimate_annual_revenue': None,
+                        'company_fiscal_year_end': None,
+                        'company_parent_domain': None,
+                        'company_ultimate_parent_domain': None,
+                        'company_indexed_at':  None
+                    }
+            new_row['email'] = row['email']
+            info = row['info']
+            try:
+                if info['person'] is not None:
+                    person = row['info']['person']
+                    person_geo = person['geo']
+                    person_employment = person['employment']
+                    person_info = {
+                        # PERSON info
+                        'person_fullname': person['name']['fullName'],
+                        'person_location': person['location'],
+                        'person_city': person_geo['city'],
+                        'person_state': person_geo['state'],
+                        'person_state_code': person_geo['stateCode'],
+                        'person_country': person_geo['country'],
+                        'person_country_code': person_geo['countryCode'],
+                        'person_employment_domain': person_employment['domain'],
+                        'person_employment_name': person_employment['name'],
+                        'person_employment_title': person_employment['title'],
+                        'person_employment_role': person_employment['role'],
+                        'person_phone': person['phone'],
+                        'person_indexed_at': person['indexedAt']
+                    }
+                    new_row.update(person_info)
+                else:
+                    new_row.update(person_init)
+                if info['company'] is not None:
+                    #### Select fields from COMPANY info
+                    company = row['info']['company']
+                    company_category = company['category']
+                    company_geo = company['geo']
+                    company_metrics = company['metrics']
+                    company_info = {
+                        # COMPANY info
+                        'company_name': company['name'],
+                        'company_legal_name': company['legalName'],
+                        'company_domain': company['domain'],
+                        'company_domain_aliases': ','.join(company['domainAliases'])[0:200],
+                        'company_sector': company_category['sector'],
+                        'company_industry_grp':company_category['industryGroup'],
+                        'company_industry': company_category['industry'],
+                        'company_subindustry': company_category['subIndustry'],
+                        'company_sic_code': company_category['sicCode'],
+                        'company_street_number': company_geo['streetNumber'],
+                        'company_street_name': company_geo['streetName'],
+                        'company_subpremise': company_geo['subPremise'],
+                        'company_city': company_geo['city'],
+                        'company_postal_code': company_geo['postalCode'],
+                        'company_state': company_geo['state'],
+                        'company_state_code': company_geo['stateCode'],
+                        'company_country': company_geo['country'],
+                        'company_country_code': company_geo['countryCode'],
+                        'company_alexa_us_rank': company_metrics['alexaUsRank'],
+                        'company_alexa_global_rank': company_metrics['alexaGlobalRank'],
+                        'company_employees': company_metrics['employees'],
+                        'company_employees_range': company_metrics['employeesRange'],
+                        'company_market_cap': company_metrics['marketCap'],
+                        'company_raised': company_metrics['raised'],
+                        'company_annual_revenue': company_metrics['annualRevenue'],
+                        'company_estimate_annual_revenue': company_metrics['estimatedAnnualRevenue'],
+                        'company_fiscal_year_end': company_metrics['fiscalYearEnd'],
+                        'company_parent_domain': company['parent']['domain'],
+                        'company_ultimate_parent_domain': company['ultimateParent']['domain'],
+                        'company_indexed_at':  company['indexedAt']
+                    }
+                    new_row.update(company_info)
+                else:
+                    new_row.update(company_init)
+                new_row['load_date_utc'] = datetime.now(timezone.utc)
+                #print(company_indexed_at)
+                #print(new_row)
+                new_df.append(new_row)
+            except:
+                print(f"Data issue for [{row['email']}]")
+        transformed_data = pd.DataFrame(new_df)
+        transformed_data
+  - cellType: SQL
+    cellId: 6cbe832b-d28b-4a5e-aaab-53cb01d37ebd # DO NOT CHANGE - Hex uses this to match up cells when reimporting the file, and detect any changes to existing cells
+    cellLabel: Select and format the necessary fields
+    config:
+      source: |
+        select
+            email,
+            cast(person_fullname as varchar(256)) as person_fullname,
+            cast(person_location as varchar(256)) as person_location,
+            cast(person_city as varchar(256)) as person_city,
+            cast(person_state as varchar(256)) as person_state,
+            cast(person_state_code as varchar(256)) as person_state_code,
+            cast(person_country as varchar(256)) as person_country,
+            cast(person_country_code as varchar(256)) as person_country_code,
+            cast(person_employment_domain as varchar(256)) as person_employment_domain,
+            cast(person_employment_name as varchar(256)) as person_employment_name,
+            cast(person_employment_title as varchar(256)) as person_employment_title,
+            cast(person_employment_role as varchar(256)) as person_employment_role,
+            cast(person_phone as varchar(256)) as person_phone,
+            cast(person_indexed_at as timestamp) as person_indexed_at,
+            cast(company_name as varchar(256)) as company_name,
+            cast(company_legal_name as varchar(256)) as company_legal_name,
+            cast(company_domain as varchar(256)) as company_domain,
+            cast(company_domain_aliases as varchar(256)) as company_domain_aliases,
+            cast(company_sector as varchar(256)) as company_sector,
+            cast(company_industry_grp as varchar(256)) as company_industry_grp,
+            cast(company_industry as varchar(256)) as company_industry,
+            cast(company_subindustry as varchar(256)) as company_subindustry,
+            cast(company_sic_code as varchar(256)) as company_sic_code,
+            cast(company_street_number as varchar(256)) as company_street_number,
+            cast(company_street_name as varchar(256)) as company_street_name,
+            cast(company_subpremise as varchar(256)) as company_subpremise,
+            cast(company_city as varchar(256)) as company_city,
+            cast(company_postal_code as varchar(256)) as company_postal_code,
+            cast(company_state as varchar(256)) as company_state,
+            cast(company_state_code as varchar(256)) as company_state_code,
+            cast(company_country as varchar(256)) as company_country,
+            cast(company_country_code as varchar(256)) as company_country_code,
+            cast(cast(company_alexa_us_rank as float) as int) as company_alexa_us_rank,
+            cast(
+                cast(company_alexa_global_rank as float) as int
+            ) as company_alexa_global_rank,
+            cast(cast(company_employees as float) as int) as company_employees,
+            cast(company_employees_range as varchar(256)) as company_employees_range,
+            cast(company_market_cap as varchar(256)) as company_market_cap,
+            cast(cast(company_raised as float) as int) as company_raised,
+            cast(
+                cast(company_annual_revenue as float) as bigint
+            ) as company_annual_revenue,
+            cast(company_estimate_annual_revenue as varchar(256)) as company_estimate_annual_revenue,
+            cast(
+                cast(company_fiscal_year_end as float) as int
+            ) as company_fiscal_year_end,
+            cast(company_parent_domain as varchar(256)) as company_parent_domain,
+            cast(company_ultimate_parent_domain as varchar(256)) as company_ultimate_parent_domain,
+            cast(company_indexed_at as timestamp) as company_indexed_at,
+            cast(load_date_utc as timestamp) as load_date_utc
+        from transformed_data
+      dataFrameCell: true
+      dataConnectionId: null
+      resultVariableName: formatted_data
+      useRichDisplay: true
+      sqlCellOutputType: PANDAS
+      useQueryMode: false
+      castDecimals: false
+      useNativeDates: true
+      outputFilteredResult: false
+      allowDuplicateColumns: false
+      tableDisplayConfig:
+        pageSize: 50
+        height: null
+        hideIcons: false
+        hideIndex: false
+        defaultSortColumn: null
+        defaultSortIndexColumn: null
+        defaultSortDirection: ASC
+        conditionalFormatting: null
+        filters: null
+        columnProperties:
+          - originalName: email
+            renameTo: null
+            size: 186
+            wrapText: null
+            displayFormat: null
+          - originalName: person_city
+            renameTo: null
+            size: 133
+            wrapText: null
+            displayFormat: null
+          - originalName: person_country
+            renameTo: null
+            size: 155
+            wrapText: null
+            displayFormat: null
+          - originalName: person_country_code
+            renameTo: null
+            size: 187
+            wrapText: null
+            displayFormat: null
+          - originalName: person_fullname
+            renameTo: null
+            size: 162
+            wrapText: null
+            displayFormat: null
+          - originalName: person_location
+            renameTo: null
+            size: 158
+            wrapText: null
+            displayFormat: null
+          - originalName: person_state
+            renameTo: null
+            size: 142
+            wrapText: null
+            displayFormat: null
+          - originalName: person_state_code
+            renameTo: null
+            size: 173
+            wrapText: null
+            displayFormat: null
+        columnOrdering: null
+  - cellType: CODE
+    cellId: ae53c262-2ba1-4779-bb6c-20ed64530bb2 # DO NOT CHANGE - Hex uses this to match up cells when reimporting the file, and detect any changes to existing cells
+    cellLabel: null
+    config:
+      source: print(formatted_data.dtypes)
+  - cellType: WRITEBACK
+    cellId: b0ec1b84-3356-4f27-a2d6-e18001a7b654 # DO NOT CHANGE - Hex uses this to match up cells when reimporting the file, and detect any changes to existing cells
+    cellLabel: Write to database
+    config:
+      dataframeName: formatted_data
+      dataConnectionId: 7578b20d-de22-4206-8de5-69c40535826d
+      databaseName: dev
+      dynamicTableName: false
+      overwrite: false
+      runInApp: false
+      runInLogicView: false
+      runOnScheduledRun: false
+      schemaName: test_clean
+      tableName: clearbit_enrichment
+appLayout:
+  fullWidth: false
+  visibleMetadataFields:
+    - NAME
+    - DESCRIPTION
+    - AUTHOR
+    - LAST_EDITED
+    - LAST_RUN
+    - CATEGORIES
+    - STATUS
+    - TABLE_OF_CONTENTS
+  rows:
+    - columns:
+        - start: 0
+          end: 120
+          elements:
+            - showSource: false
+              hideOutput: false
+              type: CELL
+              cellId: dfeecc68-0c88-4517-a4e5-4df5192aeea9
+              height: null
+              showLabel: true
+    - columns:
+        - start: 0
+          end: 120
+          elements:
+            - showSource: false
+              hideOutput: false
+              type: CELL
+              cellId: 8373aae2-65ed-4ed8-bf4a-afc1260e30a6
+              height: null
+              showLabel: true
