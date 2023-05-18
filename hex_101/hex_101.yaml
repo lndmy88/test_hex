@@ -1,9 +1,9 @@
 schemaVersion: 2
 meta:
-  sourceVersionId: dba1a0c6-48b2-4d73-91e5-7a18179ea6f9 # DO NOT CHANGE - Hex uses this to match up project versions when reimporting the file
+  sourceVersionId: 365197b6-93ec-4fe4-b1a1-5e54985a5234 # DO NOT CHANGE - Hex uses this to match up project versions when reimporting the file
   description: This pipeline is to enrich current user information via Clearbit api
   projectId: ced92653-77f4-454d-956b-d1e54ff1e5c8 # DO NOT CHANGE - Unique ID of the project from which this file was generated
-  title: hex_101
+  title: Clearbit Enrichment
   timezone: null
   appTheme: SYS_PREF
   codeLanguage: PYTHON
