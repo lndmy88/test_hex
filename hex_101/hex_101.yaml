@@ -1,9 +1,9 @@
 schemaVersion: 2
 meta:
-  sourceVersionId: dba1a0c6-48b2-4d73-91e5-7a18179ea6f9 # DO NOT CHANGE - Hex uses this to match up project versions when reimporting the file
+  sourceVersionId: 15236cbb-0e43-4c71-8b37-20315c000af9 # DO NOT CHANGE - Hex uses this to match up project versions when reimporting the file
   description: This pipeline is to enrich current user information via Clearbit api
   projectId: ced92653-77f4-454d-956b-d1e54ff1e5c8 # DO NOT CHANGE - Unique ID of the project from which this file was generated
-  title: hex_101
+  title: Clearbit Enrichment
   timezone: null
   appTheme: SYS_PREF
   codeLanguage: PYTHON
@@ -291,21 +291,15 @@ cells:
             cast(company_state_code as varchar(256)) as company_state_code,
             cast(company_country as varchar(256)) as company_country,
             cast(company_country_code as varchar(256)) as company_country_code,
-            cast(cast(company_alexa_us_rank as float) as int) as company_alexa_us_rank,
-            cast(
-                cast(company_alexa_global_rank as float) as int
-            ) as company_alexa_global_rank,
-            cast(cast(company_employees as float) as int) as company_employees,
+            cast(company_alexa_us_rank as float) as company_alexa_us_rank,
+            cast(company_alexa_global_rank as float) as company_alexa_global_rank,
+            cast(company_employees as float) as company_employees,
             cast(company_employees_range as varchar(256)) as company_employees_range,
             cast(company_market_cap as varchar(256)) as company_market_cap,
-            cast(cast(company_raised as float) as int) as company_raised,
-            cast(
-                cast(company_annual_revenue as float) as bigint
-            ) as company_annual_revenue,
+            cast(company_raised as float) as company_raised,
+            cast(company_annual_revenue as float) as company_annual_revenue,
             cast(company_estimate_annual_revenue as varchar(256)) as company_estimate_annual_revenue,
-            cast(
-                cast(company_fiscal_year_end as float) as int
-            ) as company_fiscal_year_end,
+            cast(company_fiscal_year_end as float) as company_fiscal_year_end,
             cast(company_parent_domain as varchar(256)) as company_parent_domain,
             cast(company_ultimate_parent_domain as varchar(256)) as company_ultimate_parent_domain,
             cast(company_indexed_at as timestamp) as company_indexed_at,
